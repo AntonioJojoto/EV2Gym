@@ -85,6 +85,51 @@ def profit_maximization(env, total_costs, user_satisfaction_list, *args):
     
     return reward
 
+def flex_maximization(env, total_costs, user_satisfaction_list, *args):
+    '''
+    This reward function includes the cost and the flexibility
+    '''
+
+    # Economic part
+    reward = total_costs
+    
+    # Definiing the flexibility
+    up_flex=0
+    down_flex=0
+
+    # Flexibility multipliers
+    up_multiplier=1
+    down_multiplier=1
+
+    # Calculate the flexibility
+    for i,charging_station in enumerate(env.charging_stations):
+        # Check if the charger is connected to an EV
+        if charging_station.EVs_connected!=0:
+            # Define the maximum power that can be used by the charging station
+            power_max=1.732*charging_station.voltage*charging_station.max_charge_current*3/1000
+            down_flex += power_max
+            up_flex += power_max - charging_station.current_power_output
+
+    # Add the flexibility to the reward with its multiplier
+    reward += up_multiplier*up_flex + down_multiplier*down_flex
+
+    # Weight user satisfaction
+    for score in user_satisfaction_list:
+        # reward -= 100 * (1 - score)
+        reward -= 100 * math.exp(-10*score)
+    
+    return reward
+
+
+def e_maximization(env, total_costs, user_satisfaction_list, *args):
+    reward=0
+    print("Working custom reward")
+
+    return reward
+
+
+
+
 
 
 # Previous reward functions for testing

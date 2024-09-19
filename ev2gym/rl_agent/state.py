@@ -7,7 +7,6 @@ def PublicPST(env, *args):
     '''This state function is the public power setpoints
     The state is the public power setpoints
     The state is a vector '''
-
     state = [
         (env.current_step/env.simulation_length),
         # env.sim_date.weekday() / 7,
@@ -66,13 +65,16 @@ def V2G_profit_max(env, *args):
     '''
     This is the state function for the V2GProfitMax scenario.
     '''
-    
+
+    # Define the state just with current state
     state = [
         (env.current_step),        
     ]
 
+    # Add the current power use of previous step
     state.append(env.current_power_usage[env.current_step-1])
 
+    ## Adding prices
     charge_prices = abs(env.charge_prices[0, env.current_step:
         env.current_step+20])
     
@@ -81,6 +83,10 @@ def V2G_profit_max(env, *args):
     
     state.append(charge_prices)
     
+    # Sweep over the transformers to get more info about EVs
+    # In this case adds
+    # 1. Current soc
+    # 2. Time until departure
     # For every transformer
     for tr in env.transformers:
 
@@ -210,4 +216,11 @@ def BusinessPSTwithMoreKnowledge(env, *args):
 
     np.set_printoptions(suppress=True)
 
+    return state
+
+def custom_state(env, *args):
+    '''
+    This state function is a test
+    '''
+    state = [(env.current_step) / env.simulation_length]
     return state
