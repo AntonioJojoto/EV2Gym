@@ -77,6 +77,20 @@ def MinimizeTrackerSurplusWithChargeRewards(env,*args):
 def profit_maximization(env, total_costs, user_satisfaction_list, *args):
     ''' This reward function is used for the profit maximization case '''
     
+    # The cost is already negative
+    reward = total_costs
+    
+    # This user satisfaction is only called when EV leaves
+    for score in user_satisfaction_list:
+        if score>=0.95:
+            reward+=3
+
+    
+    return reward
+
+def profit_maximization_old(env, total_costs, user_satisfaction_list, *args):
+    ''' This reward function is used for the profit maximization case '''
+    
     reward = total_costs
     
     for score in user_satisfaction_list:
@@ -123,7 +137,6 @@ def flex_maximization(env, total_costs, user_satisfaction_list, *args):
 
 def e_maximization(env, total_costs, user_satisfaction_list, *args):
     reward=0
-    print("Working custom reward")
 
     return reward
 

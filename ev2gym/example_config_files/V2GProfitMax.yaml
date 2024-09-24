@@ -36,7 +36,7 @@ discharge_price_factor: 1.2 # how many times more abs(expensive/cheaper) it is t
 ##############################################################################
 # Charging Network
 ##############################################################################
-v2g_enabled: True # True or False
+v2g_enabled: False# True or False
 number_of_charging_stations: 10
 number_of_transformers: 1
 number_of_ports_per_cs: 1
