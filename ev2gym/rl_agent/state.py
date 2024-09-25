@@ -6,7 +6,14 @@ def PublicPST(env, *args):
     '''This state function is the public power setpoints
     The state is the public power setpoints
     The state is a vector '''
-    state = [(env.current_step/env.simulation_length)]
+
+    state = [
+        (env.current_step/env.simulation_length),
+        # env.sim_date.weekday() / 7,
+        # turn hour and minutes in sin and cos
+        # math.sin(env.sim_date.hour/24*2*math.pi),
+        # math.cos(env.sim_date.hour/24*2*math.pi),
+    ]
 
     # the final state of each simulation
     # if env.current_step < env.simulation_length:        
@@ -24,13 +31,62 @@ def PublicPST(env, *args):
     
     state.append(setpoint)
     state.append(env.current_power_usage[env.current_step-1])
-   
 
     # For every transformer
     for tr in env.transformers:
         # For every charging station connected to the transformer
         for cs in env.charging_stations:
             if cs.connected_transformer == tr.id:
+                # For every EV connected to the charging station
+                for EV in cs.evs_connected:
+                    # If there is an EV connected
+                    if EV is not None:
+                        state.append([
+                            1 if EV.get_soc() == 1 else 0.5,  # we know if the EV is full
+                            EV.total_energy_exchanged,
+                            # EV.max_ac_charge_power*1000 /
+                            # (cs.voltage*math.sqrt(cs.phases))/100,
+                            # EV.min_ac_charge_power*1000 /
+                            # (cs.voltage*math.sqrt(cs.phases))/100,
+                            (env.current_step-EV.time_of_arrival)
+                            ])
+
+                    # else if there is no EV connected put zeros
+                    else:
+                        state.append(np.zeros(3))
+
+    state = np.array(np.hstack(state))
+
+    np.set_printoptions(suppress=True)
+
+    return state
+
+def V2G_profit_max(env, *args):
+    '''
+    This is the state function for the V2GProfitMax scenario.
+    '''
+    
+    state = [
+        (env.current_step),        
+    ]
+
+    state.append(env.current_power_usage[env.current_step-1])
+
+    charge_prices = abs(env.charge_prices[0, env.current_step:
+        env.current_step+20])
+    
+    if len(charge_prices) < 20:
+        charge_prices = np.append(charge_prices, np.zeros(20-len(charge_prices)))
+    
+    state.append(charge_prices)
+    
+    # For every transformer
+    for tr in env.transformers:
+
+        # For every charging station connected to the transformer
+        for cs in env.charging_stations:
+            if cs.connected_transformer == tr.id:
+
                 # For every EV connected to the charging station
                 for EV in cs.evs_connected:
                     # If there is an EV connected
@@ -44,16 +100,15 @@ def PublicPST(env, *args):
                     else:
                         state.append(np.zeros(2))
 
-
     state = np.array(np.hstack(state))
-
-    np.set_printoptions(suppress=True)
 
     return state
 
-def V2G_profit_max(env, *args):
+def arrival_prices(env, *args):
     '''
-    This is the state function for the V2GProfitMax scenario.
+    This is the state function for the profit maximization case
+    It includes the price for the following 20 timesteps
+    along with the current SoC and time of departure
     '''
 
     # Define the state just with current state
@@ -215,56 +270,3 @@ def custom_state(env, *args):
     state = [(env.current_step) / env.simulation_length]
     return state
 
-# TODO: This function is a copy of the previous one
-# You should be able to call you new one
-def PublicPSTold(env, *args):
-    '''This state function is the public power setpoints
-    The state is the public power setpoints
-    The state is a vector '''
-    state = [(env.current_step/env.simulation_length)]
-
-    # the final state of each simulation
-    # if env.current_step < env.simulation_length:        
-    #     setpoint = min(env.power_setpoints[env.current_step], env.charge_power_potential[env.current_step])        
-    # else:
-    #     setpoint = 0       
-    if env.current_step < env.simulation_length:  
-        # setpoint = env.power_setpoints[env.current_step:env.current_step+10]
-        setpoint = env.power_setpoints[env.current_step]
-    else:
-        setpoint = np.zeros((1))
-        
-    # if len(setpoint) < 10:
-    #     setpoint = np.append(setpoint, np.zeros(10-len(setpoint)))
-    
-    state.append(setpoint)
-    state.append(env.current_power_usage[env.current_step-1])
-
-    # For every transformer
-    for tr in env.transformers:
-        # For every charging station connected to the transformer
-        for cs in env.charging_stations:
-            if cs.connected_transformer == tr.id:
-                # For every EV connected to the charging station
-                for EV in cs.evs_connected:
-                    # If there is an EV connected
-                    if EV is not None:
-                        state.append([
-                            1 if EV.get_soc() == 1 else 0.5,  # we know if the EV is full
-                            EV.total_energy_exchanged,
-                            # EV.max_ac_charge_power*1000 /
-                            # (cs.voltage*math.sqrt(cs.phases))/100,
-                            # EV.min_ac_charge_power*1000 /
-                            # (cs.voltage*math.sqrt(cs.phases))/100,
-                            (env.current_step-EV.time_of_arrival)
-                            ])
-
-                    # else if there is no EV connected put zeros
-                    else:
-                        state.append(np.zeros(3))
-
-    state = np.array(np.hstack(state))
-
-    np.set_printoptions(suppress=True)
-
-    return state
