@@ -314,6 +314,11 @@ class EV2Gym(gym.Env):
         # self.transformer_amps = np.zeros([self.number_of_transformers,
         #                                   self.simulation_length])
 
+        # Variables for flexibility (in kWh)
+        self.up_flex = 0
+        self.down_flex = 0
+
+
         self.cs_power = np.zeros([self.cs, self.simulation_length])
         self.cs_current = np.zeros([self.cs, self.simulation_length])
 
@@ -381,6 +386,9 @@ class EV2Gym(gym.Env):
 
         port_counter = 0
 
+        up_flex_now=0
+        down_flex_now=0
+
         # Reset current power of all transformers
         for tr in self.transformers:
             tr.reset(step=self.current_step)
@@ -407,6 +415,11 @@ class EV2Gym(gym.Env):
             total_costs += costs
             total_invalid_action_punishment += invalid_action_punishment
             self.current_ev_departed += len(user_satisfaction)
+
+            # Update flexibility
+            if cs.n_evs_connected > 0:
+                up_flex_now += (cs.get_max_power() - cs.current_power_output) * self.timescale/60
+                down_flex_now+= cs.get_max_power() * self.timescale/60
 
             port_counter += n_ports
 
