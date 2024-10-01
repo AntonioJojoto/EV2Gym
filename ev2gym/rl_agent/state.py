@@ -101,6 +101,115 @@ def V2G_profit_max(env, *args):
 
     return state
 
+def arrival_prices(env, *args):
+    '''
+    This is the state function for the profit maximization case
+    It includes the price for the following 20 timesteps
+    along with the current SoC and time of departure
+    '''
+
+    # Define the state just with current state
+    state = [
+        (env.current_step/env.simulation_length),        
+    ]
+
+    # Add the current power use of previous step
+    state.append(env.current_power_usage[env.current_step-1])
+
+    ## Adding prices, they are the prices for the next 20 steps
+    charge_prices = abs(env.charge_prices[0, env.current_step:
+        env.current_step+20])
+    
+    if len(charge_prices) < 20:
+        charge_prices = np.append(charge_prices, np.zeros(20-len(charge_prices)))
+    
+    state.append(charge_prices)
+    
+    # Sweep over the transformers to get more info about EVs
+    # In this case adds
+    # 1. Current soc
+    # 2. Time until departure
+    # For every transformer
+    for tr in env.transformers:
+
+        # For every charging station connected to the transformer
+        for cs in env.charging_stations:
+            if cs.connected_transformer == tr.id:
+
+                # For every EV connected to the charging station
+                for EV in cs.evs_connected:
+                    # If there is an EV connected
+                    if EV is not None:
+                        state.append([
+                            EV.get_soc(),
+                            EV.time_of_departure - env.current_step,
+                            ])
+
+                    # else if there is no EV connected put zeros
+                    else:
+                        state.append(np.zeros(2))
+
+    state = np.array(np.hstack(state))
+
+    return state
+
+def arrival_prices_flex(env, *args):
+    '''
+    This is the state function for the profit maximization case
+    Includes current timestep info, power and flexibility
+    It includes the price for the following 20 timesteps
+    along with the current SoC and time of departure
+    '''
+
+    # Define the state just with current state
+    state = [
+        (env.current_step/env.simulation_length),        
+    ]
+
+    # Add the current power use of previous step
+    state.append(env.current_power_usage[env.current_step-1])
+    # Add flexibility from previous timestep
+    state.append(env.up_flex[env.current_step-1])
+    state.append(env.down_flex[env.current_step-1])
+
+    ## Adding prices, they are the prices for the next 20 steps
+    charge_prices = abs(env.charge_prices[0, env.current_step:
+        env.current_step+20])
+    
+    if len(charge_prices) < 20:
+        charge_prices = np.append(charge_prices, np.zeros(20-len(charge_prices)))
+    
+    state.append(charge_prices)
+    
+    # Sweep over the transformers to get more info about EVs
+    # In this case adds
+    # 1. Current soc
+    # 2. Time until departure
+    # For every transformer
+    for tr in env.transformers:
+
+        # For every charging station connected to the transformer
+        for cs in env.charging_stations:
+            if cs.connected_transformer == tr.id:
+
+                # For every EV connected to the charging station
+                for EV in cs.evs_connected:
+                    # If there is an EV connected
+                    if EV is not None:
+                        state.append([
+                            EV.get_soc(),
+                            EV.time_of_departure - env.current_step,
+                            ])
+
+                    # else if there is no EV connected put zeros
+                    else:
+                        state.append(np.zeros(2))
+
+    state = np.array(np.hstack(state))
+
+    return state
+
+
 def V2G_profit_max_loads(env, *args):
     '''
     This is the state function for the V2GProfitMax scenario with loads
@@ -215,56 +324,4 @@ def custom_state(env, *args):
     state = [(env.current_step) / env.simulation_length]
     return state
 
-# TODO: This function is a copy of the previous one
-# You should be able to call you new one
-def PublicPSTold(env, *args):
-    '''This state function is the public power setpoints
-    The state is the public power setpoints
-    The state is a vector '''
-    state = [(env.current_step/env.simulation_length)]
 
-    # the final state of each simulation
-    # if env.current_step < env.simulation_length:        
-    #     setpoint = min(env.power_setpoints[env.current_step], env.charge_power_potential[env.current_step])        
-    # else:
-    #     setpoint = 0       
-    if env.current_step < env.simulation_length:  
-        # setpoint = env.power_setpoints[env.current_step:env.current_step+10]
-        setpoint = env.power_setpoints[env.current_step]
-    else:
-        setpoint = np.zeros((1))
-        
-    # if len(setpoint) < 10:
-    #     setpoint = np.append(setpoint, np.zeros(10-len(setpoint)))
-    
-    state.append(setpoint)
-    state.append(env.current_power_usage[env.current_step-1])
-
-    # For every transformer
-    for tr in env.transformers:
-        # For every charging station connected to the transformer
-        for cs in env.charging_stations:
-            if cs.connected_transformer == tr.id:
-                # For every EV connected to the charging station
-                for EV in cs.evs_connected:
-                    # If there is an EV connected
-                    if EV is not None:
-                        state.append([
-                            1 if EV.get_soc() == 1 else 0.5,  # we know if the EV is full
-                            EV.total_energy_exchanged,
-                            # EV.max_ac_charge_power*1000 /
-                            # (cs.voltage*math.sqrt(cs.phases))/100,
-                            # EV.min_ac_charge_power*1000 /
-                            # (cs.voltage*math.sqrt(cs.phases))/100,
-                            (env.current_step-EV.time_of_arrival)
-                            ])
-
-                    # else if there is no EV connected put zeros
-                    else:
-                        state.append(np.zeros(3))
-
-    state = np.array(np.hstack(state))
-
-    np.set_printoptions(suppress=True)
-
-    return state
