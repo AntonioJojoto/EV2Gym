@@ -6,14 +6,7 @@ def PublicPST(env, *args):
     '''This state function is the public power setpoints
     The state is the public power setpoints
     The state is a vector '''
-
-    state = [
-        (env.current_step/env.simulation_length),
-        # env.sim_date.weekday() / 7,
-        # turn hour and minutes in sin and cos
-        # math.sin(env.sim_date.hour/24*2*math.pi),
-        # math.cos(env.sim_date.hour/24*2*math.pi),
-    ]
+    state = [(env.current_step/env.simulation_length)]
 
     # the final state of each simulation
     # if env.current_step < env.simulation_length:        
@@ -31,6 +24,7 @@ def PublicPST(env, *args):
     
     state.append(setpoint)
     state.append(env.current_power_usage[env.current_step-1])
+   
 
     # For every transformer
     for tr in env.transformers:
@@ -42,18 +36,14 @@ def PublicPST(env, *args):
                     # If there is an EV connected
                     if EV is not None:
                         state.append([
-                            1 if EV.get_soc() == 1 else 0.5,  # we know if the EV is full
-                            EV.total_energy_exchanged,
-                            # EV.max_ac_charge_power*1000 /
-                            # (cs.voltage*math.sqrt(cs.phases))/100,
-                            # EV.min_ac_charge_power*1000 /
-                            # (cs.voltage*math.sqrt(cs.phases))/100,
-                            (env.current_step-EV.time_of_arrival)
+                            EV.get_soc(),
+                            EV.time_of_departure - env.current_step,
                             ])
 
                     # else if there is no EV connected put zeros
                     else:
-                        state.append(np.zeros(3))
+                        state.append(np.zeros(2))
+
 
     state = np.array(np.hstack(state))
 
@@ -65,13 +55,16 @@ def V2G_profit_max(env, *args):
     '''
     This is the state function for the V2GProfitMax scenario.
     '''
-    
+
+    # Define the state just with current state
     state = [
-        (env.current_step),        
+        (env.current_step/env.simulation_length),        
     ]
 
+    # Add the current power use of previous step
     state.append(env.current_power_usage[env.current_step-1])
 
+    ## Adding prices, they are the prices for the next 20 steps
     charge_prices = abs(env.charge_prices[0, env.current_step:
         env.current_step+20])
     
@@ -80,6 +73,10 @@ def V2G_profit_max(env, *args):
     
     state.append(charge_prices)
     
+    # Sweep over the transformers to get more info about EVs
+    # In this case adds
+    # 1. Current soc
+    # 2. Time until departure
     # For every transformer
     for tr in env.transformers:
 
@@ -326,4 +323,5 @@ def custom_state(env, *args):
     '''
     state = [(env.current_step) / env.simulation_length]
     return state
+
 
