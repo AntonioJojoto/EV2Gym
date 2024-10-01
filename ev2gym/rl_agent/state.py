@@ -156,6 +156,63 @@ def arrival_prices(env, *args):
 
     return state
 
+def arrival_prices_flex(env, *args):
+    '''
+    This is the state function for the profit maximization case
+    Includes current timestep info, power and flexibility
+    It includes the price for the following 20 timesteps
+    along with the current SoC and time of departure
+    '''
+
+    # Define the state just with current state
+    state = [
+        (env.current_step/env.simulation_length),        
+    ]
+
+    # Add the current power use of previous step
+    state.append(env.current_power_usage[env.current_step-1])
+    # Add flexibility from previous timestep
+    state.append(env.up_flex[env.current_step-1])
+    state.append(env.down_flex[env.current_step-1])
+
+    ## Adding prices, they are the prices for the next 20 steps
+    charge_prices = abs(env.charge_prices[0, env.current_step:
+        env.current_step+20])
+    
+    if len(charge_prices) < 20:
+        charge_prices = np.append(charge_prices, np.zeros(20-len(charge_prices)))
+    
+    state.append(charge_prices)
+    
+    # Sweep over the transformers to get more info about EVs
+    # In this case adds
+    # 1. Current soc
+    # 2. Time until departure
+    # For every transformer
+    for tr in env.transformers:
+
+        # For every charging station connected to the transformer
+        for cs in env.charging_stations:
+            if cs.connected_transformer == tr.id:
+
+                # For every EV connected to the charging station
+                for EV in cs.evs_connected:
+                    # If there is an EV connected
+                    if EV is not None:
+                        state.append([
+                            EV.get_soc(),
+                            EV.time_of_departure - env.current_step,
+                            ])
+
+                    # else if there is no EV connected put zeros
+                    else:
+                        state.append(np.zeros(2))
+
+    state = np.array(np.hstack(state))
+
+    return state
+
+
 def V2G_profit_max_loads(env, *args):
     '''
     This is the state function for the V2GProfitMax scenario with loads

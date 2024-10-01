@@ -45,6 +45,7 @@ class EV2Gym(gym.Env):
                  extra_sim_name=None,
                  verbose=False,
                  render_mode=None,
+                 flex_multiplier=0.1,
                  ):
 
         super(EV2Gym, self).__init__()
@@ -75,6 +76,7 @@ class EV2Gym(gym.Env):
 
         self.reward_function = reward_function
         self.state_function = state_function
+        self.flex_multiplier = flex_multiplier
 
         if seed is None:
             self.seed = np.random.randint(0, 1000000)
@@ -300,6 +302,7 @@ class EV2Gym(gym.Env):
         '''
         Initializes the variables used for keeping simulation statistics
         '''
+        self.episode_cost = 0
         self.current_step = 0
         self.total_evs_spawned = 0
         self.total_reward = 0
@@ -315,8 +318,10 @@ class EV2Gym(gym.Env):
         #                                   self.simulation_length])
 
         # Variables for flexibility (in kWh)
-        self.up_flex = 0
-        self.down_flex = 0
+        self.up_flex = np.zeros(self.simulation_length)
+        self.up_energy= np.zeros(self.simulation_length)
+        self.down_flex = np.zeros(self.simulation_length)
+        self.down_energy= np.zeros(self.simulation_length)
 
 
         self.cs_power = np.zeros([self.cs, self.simulation_length])
@@ -386,8 +391,6 @@ class EV2Gym(gym.Env):
 
         port_counter = 0
 
-        up_flex_now=0
-        down_flex_now=0
 
         # Reset current power of all transformers
         for tr in self.transformers:
@@ -412,14 +415,30 @@ class EV2Gym(gym.Env):
             self.transformers[cs.connected_transformer].step(
                 cs.current_total_amps, cs.current_power_output)
 
+            # Update flexibility 
+            # This code is only executed if:
+            # There is an EV connected to the charger and the SoC is not 100%
+            for EV in cs.evs_connected:
+                if cs.n_evs_connected > 0 and EV.get_soc() != 1:
+                    # In kW
+                    up_flex = cs.get_max_power() - cs.current_power_output
+                    down_flex = cs.get_max_power() 
+                    # Update data
+                    self.up_flex[self.current_step] += up_flex
+                    self.down_flex[self.current_step]+= down_flex
+
+                    # In kWh
+                    self.up_energy[self.current_step] += up_flex * self.timescale/60 
+                    self.down_energy[self.current_step] += down_flex * self.timescale/60 
+
+                    # Adjust the cost based on flexibility
+                    costs -= self.flex_multiplier * (up_flex*self.timescale/60) * self.charge_prices[cs.id, self.current_step]
+                    costs -= self.flex_multiplier * (down_flex*self.timescale/60) * self.charge_prices[cs.id, self.current_step]
+
+            
             total_costs += costs
             total_invalid_action_punishment += invalid_action_punishment
             self.current_ev_departed += len(user_satisfaction)
-
-            # Update flexibility
-            if cs.n_evs_connected > 0:
-                up_flex_now += (cs.get_max_power() - cs.current_power_output) * self.timescale/60
-                down_flex_now+= cs.get_max_power() * self.timescale/60
 
             port_counter += n_ports
 
@@ -445,6 +464,7 @@ class EV2Gym(gym.Env):
 
         self._update_power_statistics(departing_evs)
 
+
         self.current_step += 1
         self._step_date()
 
@@ -468,6 +488,7 @@ class EV2Gym(gym.Env):
         if visualize:
             visualize_step(self)
 
+        self.episode_cost += total_costs
         self.render()
 
         return self._check_termination(user_satisfaction_list, reward)

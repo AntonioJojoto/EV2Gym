@@ -12,8 +12,15 @@ from ev2gym.models.ev import EV
 def get_statistics(env) -> Dict:
     total_ev_served = np.array(
         [cs.total_evs_served for cs in env.charging_stations]).sum()
-    total_profits = np.array(
+    # Real profits has only into consideration economic
+    real_profits = np.array(
         [cs.total_profits for cs in env.charging_stations]).sum()
+    # Total profits has into consideration also the flexibility
+    total_profits = env.episode_cost
+    # Mean flexibility parameters
+    up_capacity = env.up_energy.sum()
+    down_capacity = env.down_energy.sum() 
+
     total_energy_charged = np.array(
         [cs.total_energy_charged for cs in env.charging_stations]).sum()
     total_energy_discharged = np.array(
@@ -73,6 +80,9 @@ def get_statistics(env) -> Dict:
 
     stats = {'total_ev_served': total_ev_served,
              'total_profits': total_profits,
+             'real_profits':real_profits,
+             'up_capacity':up_capacity,
+             'down_capacity':down_capacity,
              'total_energy_charged': total_energy_charged,
              'total_energy_discharged': total_energy_discharged,
              'average_user_satisfaction': average_user_satisfaction,
