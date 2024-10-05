@@ -422,7 +422,7 @@ class EV2Gym(gym.Env):
                 if cs.n_evs_connected > 0 and EV.get_soc() != 1:
                     # In kW
                     up_flex = cs.get_max_power() - cs.current_power_output
-                    down_flex = cs.get_max_power() 
+                    down_flex = cs.current_power_output
                     # Update data
                     self.up_flex[self.current_step] += up_flex
                     self.down_flex[self.current_step]+= down_flex

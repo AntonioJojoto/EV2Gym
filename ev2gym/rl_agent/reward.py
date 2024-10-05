@@ -74,24 +74,60 @@ def MinimizeTrackerSurplusWithChargeRewards(env,*args):
     
     return reward
 
-def profit_maximization(env, total_costs, user_satisfaction_list, *args):
+def profit_maximization(env, total_costs, user_satisfaction_list,invalid_actions, *args):
     ''' This reward function is used for the profit maximization case '''
     
     # The cost is already negative
     reward = total_costs
+
+    # Add punishments for invalid actions
+    # Each invalid action is one 
+    reward -= 5*invalid_actions
     
     # This user satisfaction is only called when EV leaves
     for score in user_satisfaction_list:
-        if score>=0.95:
-            reward+=3
-
-    
+        if score >= 0.85:
+            # Linear increase for user satisfaction >= 0.85
+            reward = 22.2 * (score- 0.85)
+        else:
+            # Sharp penalty for user satisfaction < 0.85
+            reward = -66.6 * (score- 0.85)
     return reward
 
-def profit_maximization_old(env, total_costs, user_satisfaction_list, *args):
+def profit_maximization_flex(env, total_costs, user_satisfaction_list,invalid_actions, *args):
+    '''
+    This reward function is used for the profit maximization case
+    Reward for user satisfaction is higher due to added satisfaction reward
+    '''
+    
+    # The cost is already negative
+    reward = total_costs
+
+    # Add punishments for invalid actions
+    # Each invalid action is one 
+    reward -= 5*invalid_actions
+
+    
+    # This user satisfaction is only called when EV leaves
+    for score in user_satisfaction_list:
+        if score >= 0.85:
+            # Linear increase for user satisfaction >= 0.85
+            reward = 66.7 * (score- 0.85)
+        else:
+            # Sharp penalty for user satisfaction < 0.85
+            reward = -200 * (score- 0.85)
+    return reward
+
+    
+def profit_maximization_old(env, total_costs, user_satisfaction_list,invalid_actions, *args):
     ''' This reward function is used for the profit maximization case '''
     
     reward = total_costs
+
+    # Add punishments for invalid actions
+    # Each invalid action is one 
+    reward -= 5*invalid_actions
+
     
     for score in user_satisfaction_list:
         # reward -= 100 * (1 - score)
@@ -99,13 +135,18 @@ def profit_maximization_old(env, total_costs, user_satisfaction_list, *args):
     
     return reward
 
-def flex_maximization(env, total_costs, user_satisfaction_list, *args):
+def flex_maximization(env, total_costs, user_satisfaction_list,invalid_actions, *args):
     '''
     This reward function includes the cost and the flexibility
     '''
 
     # Economic part
     reward = total_costs
+
+    # Add punishments for invalid actions
+    # Each invalid action is one 
+    reward -= 5*invalid_actions
+
     
     # Definiing the flexibility
     up_flex=0

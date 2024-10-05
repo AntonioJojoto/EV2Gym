@@ -22,18 +22,16 @@ def evaluate_model(model,num_episodes):
         [i[0]['total_ev_served'] for i in stats])/len(stats))
     print("total_profits: ", sum(
         [i[0]['total_profits'] for i in stats])/len(stats))
+    print("real_profits (no flexibility): ", sum(
+        [i[0]['real_profits'] for i in stats])/len(stats))
+    print("Up_flexibility (kWh): ", sum(
+        [i[0]['up_capacity'] for i in stats])/len(stats))
+    print("Down_flexibility (kWh): ", sum(
+        [i[0]['down_capacity'] for i in stats])/len(stats))
     print("total_energy_charged: ", sum(
         [i[0]['total_energy_charged'] for i in stats])/len(stats))
-    print("total_energy_discharged: ", sum(
-        [i[0]['total_energy_discharged'] for i in stats])/len(stats))
     print("average_user_satisfaction: ", sum(
         [i[0]['average_user_satisfaction'] for i in stats])/len(stats))
-    print("power_tracker_violation: ", sum(
-        [i[0]['power_tracker_violation'] for i in stats])/len(stats))
-    print("tracking_error: ", sum(
-        [i[0]['tracking_error'] for i in stats])/len(stats))
     print("energy_user_satisfaction: ", sum(
         [i[0]['energy_user_satisfaction'] for i in stats])/len(stats))
-    print("total_transformer_overload: ", sum(
-        [i[0]['total_transformer_overload'] for i in stats])/len(stats))
     print("reward: ", sum([i[0]['episode']['r'] for i in stats])/len(stats))
