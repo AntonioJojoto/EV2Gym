@@ -117,7 +117,8 @@ class EV_Charger:
         # if no EV is connected, set action to 0
         invalid_action_punishment = 0
         for i in range(len(actions)):
-            if self.evs_connected[i] is None:
+            # If no EV is connected, and action is 1, then add action punishment
+            if self.evs_connected[i] is None and actions[i]!=0:
                 actions[i] = 0
                 invalid_action_punishment += 1
 

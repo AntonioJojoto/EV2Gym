@@ -419,7 +419,7 @@ class EV2Gym(gym.Env):
             # This code is only executed if:
             # There is an EV connected to the charger and the SoC is not 100%
             for EV in cs.evs_connected:
-                if cs.n_evs_connected > 0 and EV.get_soc() != 1:
+                if cs.n_evs_connected>0 and self.check_to_add_flex(EV.get_soc(),EV.battery_capacity,cs.get_max_power(),EV.time_of_departure):
                     # In kW
                     up_flex = cs.get_max_power() - cs.current_power_output
                     down_flex = cs.current_power_output
@@ -616,3 +616,38 @@ class EV2Gym(gym.Env):
         self.total_reward += reward
         
         return reward
+
+    def check_to_add_flex(self,soc,bat_max,max_power,departing_time):
+        """
+        Checks if the flexibility shall be included in the calculation based on three criteria:
+        1. There are EVs connected to the charging StopAsyncIteration
+        2. The EVs connected are not at max capacity
+        3. The time to charge at max power is lower than departing time
+
+        Parameters:
+
+        Returns:
+            bool: True if we include flexbility, else false
+        """
+
+        # Check the first two conditions
+        if soc == 1:
+            return False
+
+        # Calculate the energy needed to reach 100% SoC
+        energy_needed = (1 - soc) * bat_max  # in kWh
+
+
+        # Calculate chargind time (in minutes)
+        charging_time = (energy_needed /max_power)/self.timescale
+
+        # Check if it is needed to charge at max power is greater than departing time
+        if (departing_time-self.current_step)>charging_time:
+            # There is no need to charge at max power
+            # Because min charging time is lower than departing time
+            return True
+        else:
+            return False
+
+
+
