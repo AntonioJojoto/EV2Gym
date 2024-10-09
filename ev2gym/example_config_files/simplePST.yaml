@@ -113,7 +113,7 @@ charging_station:
 # Default EV model
 ev:
   battery_capacity: 50 # in kWh
-  min_battery_capacity: 10 # in kWh
+  min_battery_capacity: 1 # in kWh
   desired_capacity: 50 # in kWh
   max_ac_charge_power: 22 # in kW
   min_ac_charge_power: 0 # in kW

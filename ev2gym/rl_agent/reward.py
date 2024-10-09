@@ -2,6 +2,7 @@
 '''
 
 import math
+from ev2gym.rl_agent.usr import exp_r1 
 
 def SquaredTrackingErrorReward(env,*args):
     '''This reward function is the squared tracking error that uses the minimum of the power setpoints and the charge power potential
@@ -82,43 +83,16 @@ def profit_maximization(env, total_costs, user_satisfaction_list,invalid_actions
 
     # Add punishments for invalid actions
     # Each invalid action is one 
-    reward -= 5*invalid_actions
+    # if invalid_actions>0:
+    #     print("Invalid actions detected: ",invalid_actions)
+    #     reward -= 5*invalid_actions
     
     # This user satisfaction is only called when EV leaves
     for score in user_satisfaction_list:
-        if score >= 0.85:
-            # Linear increase for user satisfaction >= 0.85
-            reward = 22.2 * (score- 0.85)
-        else:
-            # Sharp penalty for user satisfaction < 0.85
-            reward = -66.6 * (score- 0.85)
+        reward+=exp_r1(score)
+
     return reward
 
-def profit_maximization_flex(env, total_costs, user_satisfaction_list,invalid_actions, *args):
-    '''
-    This reward function is used for the profit maximization case
-    Reward for user satisfaction is higher due to added satisfaction reward
-    '''
-    
-    # The cost is already negative
-    reward = total_costs
-
-    # Add punishments for invalid actions
-    # Each invalid action is one 
-    reward -= 5*invalid_actions
-
-    
-    # This user satisfaction is only called when EV leaves
-    for score in user_satisfaction_list:
-        if score >= 0.85:
-            # Linear increase for user satisfaction >= 0.85
-            reward = 66.7 * (score- 0.85)
-        else:
-            # Sharp penalty for user satisfaction < 0.85
-            reward = -200 * (score- 0.85)
-    return reward
-
-    
 def profit_maximization_old(env, total_costs, user_satisfaction_list,invalid_actions, *args):
     ''' This reward function is used for the profit maximization case '''
     
@@ -126,7 +100,7 @@ def profit_maximization_old(env, total_costs, user_satisfaction_list,invalid_act
 
     # Add punishments for invalid actions
     # Each invalid action is one 
-    reward -= 5*invalid_actions
+    # reward -= 5*invalid_actions
 
     
     for score in user_satisfaction_list:
@@ -134,53 +108,6 @@ def profit_maximization_old(env, total_costs, user_satisfaction_list,invalid_act
         reward -= 100 * math.exp(-10*score)
     
     return reward
-
-def flex_maximization(env, total_costs, user_satisfaction_list,invalid_actions, *args):
-    '''
-    This reward function includes the cost and the flexibility
-    '''
-
-    # Economic part
-    reward = total_costs
-
-    # Add punishments for invalid actions
-    # Each invalid action is one 
-    reward -= 5*invalid_actions
-
-    
-    # Definiing the flexibility
-    up_flex=0
-    down_flex=0
-
-    # Flexibility multipliers
-    up_multiplier=1
-    down_multiplier=1
-
-    # Calculate the flexibility
-    for i,charging_station in enumerate(env.charging_stations):
-        # Check if the charger is connected to an EV
-        if charging_station.EVs_connected!=0:
-            # Define the maximum power that can be used by the charging station
-            power_max=1.732*charging_station.voltage*charging_station.max_charge_current*3/1000
-            down_flex += power_max
-            up_flex += power_max - charging_station.current_power_output
-
-    # Add the flexibility to the reward with its multiplier
-    reward += up_multiplier*up_flex + down_multiplier*down_flex
-
-    # Weight user satisfaction
-    for score in user_satisfaction_list:
-        # reward -= 100 * (1 - score)
-        reward -= 100 * math.exp(-10*score)
-    
-    return reward
-
-
-def e_maximization(env, total_costs, user_satisfaction_list, *args):
-    reward=0
-
-    return reward
-
 
 
 
