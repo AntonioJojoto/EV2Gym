@@ -3,6 +3,7 @@
 
 import math
 from ev2gym.rl_agent.usr import exp_r1 
+from ev2gym.rl_agent.usr import linear_r1
 
 def SquaredTrackingErrorReward(env,*args):
     '''This reward function is the squared tracking error that uses the minimum of the power setpoints and the charge power potential
@@ -80,16 +81,10 @@ def profit_maximization(env, total_costs, user_satisfaction_list,invalid_actions
     
     # The cost is already negative
     reward = total_costs
-
-    # Add punishments for invalid actions
-    # Each invalid action is one 
-    # if invalid_actions>0:
-    #     print("Invalid actions detected: ",invalid_actions)
-    #     reward -= 5*invalid_actions
     
     # This user satisfaction is only called when EV leaves
     for score in user_satisfaction_list:
-        reward+=exp_r1(score)
+        reward+=linear_r1(score)
 
     return reward
 
@@ -98,11 +93,6 @@ def profit_maximization_old(env, total_costs, user_satisfaction_list,invalid_act
     
     reward = total_costs
 
-    # Add punishments for invalid actions
-    # Each invalid action is one 
-    # reward -= 5*invalid_actions
-
-    
     for score in user_satisfaction_list:
         # reward -= 100 * (1 - score)
         reward -= 100 * math.exp(-10*score)
