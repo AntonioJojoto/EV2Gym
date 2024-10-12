@@ -14,6 +14,7 @@ import random
 from copy import deepcopy
 import yaml
 import json
+import scipy.io
 
 # from .grid import Grid
 from ev2gym.models.replay import EvCityReplay
@@ -36,6 +37,7 @@ class EV2Gym(gym.Env):
                  seed=None,
                  save_replay=False,
                  save_plots=False,
+                 save_mat=False, # save the simulation in .mat format
                  state_function=PublicPST,
                  reward_function=SquaredTrackingErrorReward,
                  eval_mode="Normal",  # eval mode can be "Normal", "Unstirred" or "Optimal" in order to save the correct statistics in the replay file
@@ -58,6 +60,7 @@ class EV2Gym(gym.Env):
         self.config = yaml.load(open(config_file, 'r'), Loader=yaml.FullLoader)
         
         self.generate_rnd_game = generate_rnd_game
+        self.save_mat_option = save_mat
         self.load_from_replay_path = load_from_replay_path
         self.empty_ports_at_end_of_simulation = empty_ports_at_end_of_simulation
         self.save_replay = save_replay
@@ -323,9 +326,18 @@ class EV2Gym(gym.Env):
         self.down_flex = np.zeros(self.simulation_length)
         self.down_energy= np.zeros(self.simulation_length)
 
-
+        # Usage per charger
         self.cs_power = np.zeros([self.cs, self.simulation_length])
         self.cs_current = np.zeros([self.cs, self.simulation_length])
+
+        # Flex per charger
+        self.cs_uflex = np.zeros([self.cs, self.simulation_length])
+        self.cs_dflex = np.zeros([self.cs, self.simulation_length])
+
+        # SoC per charger, both the SoC and the EV id
+        self.cs_soc= np.zeros([self.cs, self.simulation_length])
+        self.cs_EV_id= np.zeros([self.cs, self.simulation_length])
+        
 
         self.tr_overload = np.zeros(
             [self.number_of_transformers, self.simulation_length])
@@ -426,6 +438,9 @@ class EV2Gym(gym.Env):
                     # Update data
                     self.up_flex[self.current_step] += up_flex
                     self.down_flex[self.current_step]+= down_flex
+
+                    self.cs_uflex[cs.id][self.current_step] = up_flex
+                    self.cs_dflex[cs.id][self.current_step] = down_flex
 
                     # In kWh
                     self.up_energy[self.current_step] += up_flex * self.timescale/60 
@@ -529,6 +544,10 @@ class EV2Gym(gym.Env):
                     pickle.dump(self, f)
                 ev_city_plot(self)
 
+            if self.save_mat_option:
+                scipy.io.savemat(f"./results/{self.sim_name}.mat", self.create_mat_dictionary())
+
+
             self.done = True
             return self._get_observation(), reward, True, truncated, get_statistics(self)
         else:
@@ -584,8 +603,12 @@ class EV2Gym(gym.Env):
                     self.port_current[port, cs.id,
                                       self.current_step] = ev.actual_current
 
+                    # Update the energy levels
                     self.port_energy_level[port, cs.id,
                                            self.current_step] = ev.current_capacity/ev.battery_capacity
+
+                    self.cs_soc[cs.id,self.current_step] = ev.current_capacity
+                    self.cs_EV_id[cs.id,self.current_step] = ev.id
 
             for ev in departing_evs:
                 if not self.lightweight_plots:
@@ -650,4 +673,22 @@ class EV2Gym(gym.Env):
             return False
 
 
+    def create_mat_dictionary(self):
+        '''
+        Creates and returns the dictionary with the matrices of the enviroment
+        to be saved in the .mat file. It is used to export the results to matlab
+        '''
+        data_to_save={'power_usage':self.current_power_usage,
+                    'up_flex':self.up_flex,
+                    'down_flex':self.down_flex,
+                    'price':self.charge_prices,
+                    'cs_power':self.cs_power,
+                    'cs_current':self.cs_current,
+                    'cs_up_flex':self.cs_uflex,
+                    'cs_down_flex':self.cs_dflex,
+                    'cs_soc':self.cs_soc,
+                    'cs_EV_id':self.cs_EV_id
+                    }   
 
+        # Returns the dictionary
+        return data_to_save
