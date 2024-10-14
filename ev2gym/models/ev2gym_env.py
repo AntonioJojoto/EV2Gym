@@ -45,6 +45,7 @@ class EV2Gym(gym.Env):
                  # whether to empty the ports at the end of the simulation or not
                  empty_ports_at_end_of_simulation=True,
                  extra_sim_name=None,
+                 overwrite_name=None, # Full name
                  verbose=False,
                  render_mode=None,
                  flex_multiplier=0.1,
@@ -128,8 +129,9 @@ class EV2Gym(gym.Env):
                                               self.config['hour'],
                                               self.config['minute'])
             self.replay = None
-            self.sim_name = f'sim_' + \
-                f'{datetime.datetime.now().strftime("%Y_%m_%d_%f")}'
+
+            # Set simname to current date
+            self.sim_name = f'{datetime.datetime.now().strftime("%Y_%m_%d_%Hh%M")}'
 
             self.scenario = self.config['scenario']
             self.heterogeneous_specs = self.config['heterogeneous_ev_specs']
@@ -137,6 +139,18 @@ class EV2Gym(gym.Env):
         # Whether to simulate the grid or not (Future feature...)
         self.simulate_grid = False
 
+        if extra_sim_name is None:
+            self.sim_name = f'sim_' + \
+                        self.sim_name
+        else:
+            self.sim_name = extra_sim_name + \
+                        self.sim_name
+
+        # Overwrite name
+        if overwrite_name is not None:
+            self.sim_name=overwrite_name
+
+        
         if self.cs > 100:
             self.lightweight_plots = True
         self.sim_starting_date = self.sim_date
@@ -151,9 +165,6 @@ class EV2Gym(gym.Env):
                 print(
                     f'Did not find file {self.config["charging_network_topology"]}')
             self.charging_network_topology = None
-
-        self.sim_name = extra_sim_name + \
-            self.sim_name if extra_sim_name is not None else self.sim_name
 
         # Simulate grid
         if self.simulate_grid:
