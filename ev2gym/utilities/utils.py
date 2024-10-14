@@ -1,6 +1,7 @@
 # This file contains support functions for the EV City environment.
 
 import numpy as np
+import random
 import matplotlib.pyplot as plt
 import math
 import datetime
@@ -169,24 +170,26 @@ def spawn_single_EV(env,
     # required_energy = env.df_energy_demand[scenario].iloc[np.random.randint(
     #     0, 100, size=1)].values[0]  # kWh
 
-    # roound minute to 30 or 0
-    if minute < 30:
-        minute = 0
-    else:
-        minute = 30
+    # # roound minute to 30 or 0
+    # if minute < 30:
+    #     minute = 0
+    # else:
+    #     minute = 30
 
-    # required energy dependent on time of arrival
-    arrival_time = f'{hour:02d}:{minute:02d}'
+    # # required energy dependent on time of arrival
+    # arrival_time = f'{hour:02d}:{minute:02d}'
+    
+    # # Obtains a mean value for the required energy
+    # required_energy_mean = env.df_req_energy[
+    #     (env.df_req_energy['Arrival Time'] == arrival_time)
+    # ][scenario].values[0]
 
-    required_energy_mean = env.df_req_energy[
-        (env.df_req_energy['Arrival Time'] == arrival_time)
-    ][scenario].values[0]
+    # # Gets the required energy from a normal distribution
+    # required_energy = np.random.normal(
+    #     required_energy_mean, 0.5*required_energy_mean)  # kWh
 
-    required_energy = np.random.normal(
-        required_energy_mean, 0.5*required_energy_mean)  # kWh
-
-    if required_energy < 5:
-        required_energy = np.random.randint(5, 10)
+    # if required_energy < 5:
+    #     required_energy = np.random.randint(5, 10)
 
     if env.heterogeneous_specs:
         sampled_ev = np.random.choice(
@@ -195,27 +198,41 @@ def spawn_single_EV(env,
     else:
         battery_capacity = env.config["ev"]["battery_capacity"]
 
-    if battery_capacity < required_energy:
-        initial_battery_capacity = np.random.randint(1, battery_capacity)
-    else:
-        initial_battery_capacity = battery_capacity - required_energy
+    # # If battery capacity lower than required energy: Not usefull as 50kWh battery
+    # # Then the initial capacity is random between 1 and battery capacity
+    # # Else it is the difference between capacity and required energy
+    # if battery_capacity < required_energy:
+    #     initial_battery_capacity = np.random.randint(1, battery_capacity)
+    # else:
+    #     initial_battery_capacity = battery_capacity - required_energy
+
+    # # Not used because desired capacity equals the max capacity
+    # if initial_battery_capacity > env.config["ev"]['desired_capacity']:
+    #     initial_battery_capacity = np.random.randint(1, battery_capacity)
         
-    if initial_battery_capacity > env.config["ev"]['desired_capacity']:
-        initial_battery_capacity = np.random.randint(1, battery_capacity)
-        
-    if initial_battery_capacity < env.config["ev"]['min_battery_capacity']:
-        initial_battery_capacity = env.config["ev"]['min_battery_capacity']        
+    # # The initial battery capacity cannot be lower than the one from config file
+    # if initial_battery_capacity < env.config["ev"]['min_battery_capacity']:
+    #     initial_battery_capacity = env.config["ev"]['min_battery_capacity']        
+
+    initial_battery_capacity=random.uniform(0.3,0.6)*battery_capacity
 
     # time of stay dependent on time of arrival
-    time_of_stay_mean = env.df_time_of_stay_vs_arrival[(
-        env.df_time_of_stay_vs_arrival['Arrival Time'] == arrival_time)
-    ][scenario].values[0]
+    # time_of_stay_mean = env.df_time_of_stay_vs_arrival[(
+    #     env.df_time_of_stay_vs_arrival['Arrival Time'] == arrival_time)
+    # ][scenario].values[0]
 
+    time_of_stay_mean = 3.5
+    
     time_of_stay = np.random.normal(
         time_of_stay_mean, 0.2*time_of_stay_mean)  # hours
 
+    # Declare min and max time (hours)
+    time_of_stay=max(time_of_stay,2) 
+
     # turn from hours to steps
     time_of_stay = time_of_stay * 60 / env.timescale + 1
+
+    
 
     # Alternative method for time of stay based on 10.000 charging sessions
     # time_of_stay = np.random.choice(

@@ -4,7 +4,7 @@
 # Simulation Parameters
 ##############################################################################
 timescale: 15 # in minutes per step
-simulation_length: 112 #90 # in steps per simulation
+simulation_length: 90 #90 # in steps per simulation
 
 ##############################################################################
 # Date and Time
@@ -19,7 +19,7 @@ random_day: True # True or False
 
 # Simulation Starting Time
 # Hour and minute do not change after the environment has been reset
-hour: 5 # Simulation starting hour (24 hour format)
+hour: 6 # Simulation starting hour (24 hour format)
 minute: 0 # Simulation starting minute (0-59)
 
 # Simulate weekdays, weekends, or both
@@ -27,7 +27,7 @@ simulation_days: weekdays # weekdays, weekends, or both
 
 # EV Spawn Behavior
 scenario: public # public, private, or workplace
-spawn_multiplier: 20 # 1 is default, the higher the number the more EVs spawn
+spawn_multiplier: 50 # 1 is default, the higher the number the more EVs spawn
 
 ##############################################################################
 # Prices
@@ -38,7 +38,7 @@ discharge_price_factor: 1.2 # how many times more abs(expensive/cheaper) it is t
 # Charging Network
 ##############################################################################
 v2g_enabled: False # True or False
-number_of_charging_stations: 5
+number_of_charging_stations: 15
 number_of_transformers: 1
 number_of_ports_per_cs: 1
 # Provide path if you want to load a specific charging topology,
