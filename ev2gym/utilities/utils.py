@@ -214,20 +214,21 @@ def spawn_single_EV(env,
     # if initial_battery_capacity < env.config["ev"]['min_battery_capacity']:
     #     initial_battery_capacity = env.config["ev"]['min_battery_capacity']        
 
-    initial_battery_capacity=random.uniform(0.3,0.6)*battery_capacity
+    initial_battery_capacity=random.uniform(0.4,0.6)*battery_capacity
 
     # time of stay dependent on time of arrival
     # time_of_stay_mean = env.df_time_of_stay_vs_arrival[(
     #     env.df_time_of_stay_vs_arrival['Arrival Time'] == arrival_time)
     # ][scenario].values[0]
 
-    time_of_stay_mean = 3.5
+    time_of_stay_mean = 4
     
     time_of_stay = np.random.normal(
         time_of_stay_mean, 0.2*time_of_stay_mean)  # hours
 
     # Declare min and max time (hours)
     time_of_stay=max(time_of_stay,2) 
+    time_of_stay=min(time_of_stay,6) 
 
     # turn from hours to steps
     time_of_stay = time_of_stay * 60 / env.timescale + 1
