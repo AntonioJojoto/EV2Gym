@@ -118,10 +118,10 @@ def arrival_prices(env, *args):
 
     ## Adding prices, they are the prices for the next 20 steps
     charge_prices = abs(env.charge_prices[0, env.current_step:
-        env.current_step+60])
+                                          env.current_step+36])
     
-    if len(charge_prices) < 60:
-        charge_prices = np.append(charge_prices, np.zeros(60-len(charge_prices)))
+    if len(charge_prices) < 36:
+        charge_prices = np.append(charge_prices, np.zeros(36-len(charge_prices)))
     
     state.append(charge_prices)
     
@@ -174,10 +174,10 @@ def arrival_prices_flex(env, *args):
 
     ## Adding prices, they are the prices for the next 20 steps
     charge_prices = abs(env.charge_prices[0, env.current_step:
-        env.current_step+60])
+                                          env.current_step+36])
     
-    if len(charge_prices) < 60:
-        charge_prices = np.append(charge_prices, np.zeros(60-len(charge_prices)))
+    if len(charge_prices) < 36:
+        charge_prices = np.append(charge_prices, np.zeros(36-len(charge_prices)))
     
     state.append(charge_prices)
     
